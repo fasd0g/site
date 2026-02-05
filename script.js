@@ -18,7 +18,9 @@
 
   function showToast(msg) {
     toast.textContent = msg;
-    setTimeout(() => { if (toast.textContent === msg) toast.textContent = ""; }, 2400);
+    setTimeout(() => {
+      if (toast.textContent === msg) toast.textContent = "";
+    }, 2400);
   }
 
   async function copyAddress() {
@@ -38,18 +40,25 @@
   }
 
   function setOffline(reason = "Сервер офлайн или недоступен") {
-  statusText.textContent = "OFFLINE";
-  statusText.classList.remove("mc-online");
-  statusText.classList.add("offline");
+    statusText.textContent = "OFFLINE";
+    statusText.classList.remove("mc-online");
+    statusText.classList.add("offline");
 
-  statusHint.textContent = reason;
-  playersNow.textContent = "0";
-  playersMax.textContent = "0";
-  versionText.textContent = "—";
-  motdText.textContent = "—";
-  playersList.textContent = "—";
+    statusHint.textContent = reason;
+    playersNow.textContent = "0";
+    playersMax.textContent = "0";
+    versionText.textContent = "—";
+    motdText.textContent = "—";
+    playersList.textContent = "—";
   }
 
+  function setMinecraftOnlineText() {
+    // ONLINE = 6 букв → делаем 6 сегментов
+    const letters = ["O", "N", "L", "I", "N", "E"];
+    statusText.innerHTML = letters.map((ch) => `<span class="seg">${ch}</span>`).join("");
+    statusText.classList.remove("offline");
+    statusText.classList.add("mc-online");
+  }
 
   function cleanMotd(motd) {
     if (!motd) return "—";
@@ -59,7 +68,8 @@
   }
 
   async function fetchStatus() {
-    statusText.textContent = "…";
+    statusText.innerHTML = "…";
+    statusText.classList.remove("mc-online", "offline");
     statusHint.textContent = "Обновляем статус";
 
     try {
@@ -74,7 +84,7 @@
         return;
       }
 
-      statusText.textContent = "ONLINE";
+      setMinecraftOnlineText();
       statusHint.textContent = "Последнее обновление: " + new Date().toLocaleString("ru-RU");
 
       const online = data.players?.online ?? 0;
@@ -88,11 +98,11 @@
 
       const list = data.players?.list;
       if (Array.isArray(list) && list.length) {
-        playersList.textContent = "Игроки: " + list.slice(0, 20).join(", ") + (list.length > 20 ? " …" : "");
+        playersList.textContent =
+          "Игроки: " + list.slice(0, 20).join(", ") + (list.length > 20 ? " …" : "");
       } else {
         playersList.textContent = "Список игроков скрыт или недоступен";
       }
-
     } catch (e) {
       setOffline("Ошибка получения статуса");
       console.error(e);
