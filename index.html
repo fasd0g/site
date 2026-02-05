@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Minecraft сервер — minecraft.serv64rus.ru</title>
-  <meta name="description" content="Официальная страница сервера Minecraft: minecraft.serv64rus.ru" />
+  <title>Серверы — serv64rus.ru</title>
+  <meta name="description" content="Статус серверов: Minecraft и Hytale — serv64rus.ru" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -12,9 +12,12 @@
 
   <main class="wrap">
     <header class="hero">
-      <div class="badge">Minecraft Server</div>
-      <h1>minecraft.serv64rus.ru</h1>
-      <p class="subtitle">Заходи играть — статус сервера обновляется автоматически.</p>
+      <!-- Переключатель игры -->
+      <div class="tabs" id="tabs" role="tablist" aria-label="Выбор сервера"></div>
+
+      <div class="badge" id="badge">Server</div>
+      <h1 id="serverTitle">—</h1>
+      <p class="subtitle" id="serverSubtitle">—</p>
 
       <div class="cta-row">
         <button id="copyBtn" class="btn primary" type="button" aria-label="Скопировать адрес сервера">
@@ -53,18 +56,12 @@
 
     <section class="card" id="howto">
       <h2>Как подключиться</h2>
-      <ol class="steps">
-        <li>Открой Minecraft → <b>Сетевая игра</b> → <b>Добавить сервер</b></li>
-        <li>Адрес сервера: <b>minecraft.serv64rus.ru</b></li>
-        <li>Сохрани и заходи 🎮</li>
-      </ol>
-      <p class="muted">
-        На странице IP не отображается — используется только доменное имя.
-      </p>
+      <ol class="steps" id="howtoSteps"></ol>
+      <p class="muted" id="howtoNote"></p>
     </section>
 
     <footer class="footer">
-      <span>© <span id="year"></span> minecraft.serv64rus.ru</span>
+      <span>© <span id="year"></span> <span id="footerDomain">serv64rus.ru</span></span>
       <span class="sep">•</span>
       <button class="linklike" id="refreshBtn" type="button">Обновить статус</button>
     </footer>

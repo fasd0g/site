@@ -1,118 +1,235 @@
-(() => {
-  const DOMAIN = "minecraft.serv64rus.ru"; // Только домен — IP нигде не используется
+// ====== НАСТРОЙКИ СЕРВЕРОВ ======
+const SERVERS = [
+  {
+    id: "mc",
+    game: "Minecraft",
+    badge: "Minecraft Server",
+    title: "minecraft.serv64rus.ru",
+    subtitle: "Заходи играть — статус сервера обновляется автоматически.",
+    addressToCopy: "minecraft.serv64rus.ru",
+    // Источник статуса (готовый публичный)
+    fetchStatus: fetchMinecraftStatus,
+    howtoSteps: [
+      'Открой Minecraft → <b>Сетевая игра</b> → <b>Добавить сервер</b>',
+      'Адрес сервера: <b>minecraft.serv64rus.ru</b>',
+      'Сохрани и заходи 🎮',
+    ],
+    howtoNote: "На странице IP не отображается — используется только доменное имя.",
+  },
+  {
+    id: "hytale",
+    game: "Hytale",
+    badge: "Hytale Server",
+    title: "hytale.serv64rus.ru:6305",
+    subtitle: "Статус Hytale сервера — обновляется автоматически.",
+    addressToCopy: "hytale.serv64rus.ru:6305",
+    // Источник статуса (твой бэкенд)
+    fetchStatus: fetchHytaleStatus,
+    howtoSteps: [
+      'Открой Hytale → <b>Multiplayer</b> → <b>Add Server</b>',
+      'Адрес сервера: <b>hytale.serv64rus.ru:6305</b>',
+      'Сохрани и заходи 🎮',
+    ],
+    howtoNote: "Можно подключаться по домену или напрямую по IP: 185.248.101.123:6305",
+  },
+];
 
-  const el = (id) => document.getElementById(id);
+const els = {
+  tabs: document.getElementById("tabs"),
+  badge: document.getElementById("badge"),
+  title: document.getElementById("serverTitle"),
+  subtitle: document.getElementById("serverSubtitle"),
+  copyBtn: document.getElementById("copyBtn"),
+  toast: document.getElementById("toast"),
 
-  const statusText = el("statusText");
-  const statusHint = el("statusHint");
-  const playersNow = el("playersNow");
-  const playersMax = el("playersMax");
-  const playersList = el("playersList");
-  const versionText = el("versionText");
-  const motdText = el("motdText");
-  const toast = el("toast");
+  statusText: document.getElementById("statusText"),
+  statusHint: document.getElementById("statusHint"),
 
-  const copyBtn = el("copyBtn");
-  const refreshBtn = el("refreshBtn");
-  el("year").textContent = new Date().getFullYear();
+  playersNow: document.getElementById("playersNow"),
+  playersMax: document.getElementById("playersMax"),
+  playersList: document.getElementById("playersList"),
 
-  function showToast(msg) {
-    toast.textContent = msg;
-    setTimeout(() => {
-      if (toast.textContent === msg) toast.textContent = "";
-    }, 2400);
-  }
+  versionText: document.getElementById("versionText"),
+  motdText: document.getElementById("motdText"),
 
-  async function copyAddress() {
+  howtoSteps: document.getElementById("howtoSteps"),
+  howtoNote: document.getElementById("howtoNote"),
+
+  refreshBtn: document.getElementById("refreshBtn"),
+  year: document.getElementById("year"),
+  footerDomain: document.getElementById("footerDomain"),
+};
+
+let activeId = localStorage.getItem("activeServerId") || SERVERS[0].id;
+
+// ====== UI ======
+function renderTabs() {
+  els.tabs.innerHTML = SERVERS.map(s => `
+    <button class="tab ${s.id === activeId ? "active" : ""}"
+            role="tab"
+            aria-selected="${s.id === activeId ? "true" : "false"}"
+            data-id="${s.id}">
+      ${s.game}
+    </button>
+  `).join("");
+
+  els.tabs.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeId = btn.dataset.id;
+      localStorage.setItem("activeServerId", activeId);
+      renderStatic();
+      refreshStatus();
+    });
+  });
+}
+
+function showToast(text) {
+  if (!els.toast) return;
+  els.toast.textContent = text;
+  els.toast.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => els.toast.classList.remove("show"), 1600);
+}
+
+function setLoading() {
+  els.statusText.textContent = "Загрузка…";
+  els.statusHint.textContent = "Проверяем сервер";
+  els.playersNow.textContent = "—";
+  els.playersMax.textContent = "—";
+  els.playersList.textContent = "Список игроков может быть скрыт";
+  els.versionText.textContent = "—";
+  els.motdText.textContent = "—";
+}
+
+function renderStatic() {
+  renderTabs();
+
+  const s = getActive();
+  document.title = `${s.game} сервер — ${s.title}`;
+  els.badge.textContent = s.badge;
+  els.title.textContent = s.title;
+  els.subtitle.textContent = s.subtitle;
+  els.footerDomain.textContent = "serv64rus.ru";
+
+  els.howtoSteps.innerHTML = s.howtoSteps.map(x => `<li>${x}</li>`).join("");
+  els.howtoNote.textContent = s.howtoNote;
+
+  els.copyBtn.onclick = async () => {
     try {
-      await navigator.clipboard.writeText(DOMAIN);
-      showToast("Адрес скопирован: " + DOMAIN);
+      await navigator.clipboard.writeText(s.addressToCopy);
+      showToast("Адрес скопирован ✅");
     } catch {
-      // Фоллбек
-      const ta = document.createElement("textarea");
-      ta.value = DOMAIN;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
-      showToast("Адрес скопирован: " + DOMAIN);
+      showToast("Не удалось скопировать 😕");
     }
-  }
+  };
+}
 
-  function setOffline(reason = "Сервер офлайн или недоступен") {
-    statusText.textContent = "OFFLINE";
-    statusText.classList.remove("mc-online");
-    statusText.classList.add("offline");
+// ====== ОБНОВЛЕНИЕ СТАТУСА ======
+async function refreshStatus() {
+  const s = getActive();
+  setLoading();
 
-    statusHint.textContent = reason;
-    playersNow.textContent = "0";
-    playersMax.textContent = "0";
-    versionText.textContent = "—";
-    motdText.textContent = "—";
-    playersList.textContent = "—";
-  }
+  try {
+    const data = await s.fetchStatus(s);
 
-  function setMinecraftOnlineText() {
-    // ONLINE = 6 букв → делаем 6 сегментов
-    const letters = ["O", "N", "L", "I", "N", "E"];
-    statusText.innerHTML = letters.map((ch) => `<span class="seg">${ch}</span>`).join("");
-    statusText.classList.remove("offline");
-    statusText.classList.add("mc-online");
-  }
-
-  function cleanMotd(motd) {
-    if (!motd) return "—";
-    // Иногда API отдаёт массив строк
-    if (Array.isArray(motd)) return motd.join("\n");
-    return String(motd);
-  }
-
-  async function fetchStatus() {
-    statusText.innerHTML = "…";
-    statusText.classList.remove("mc-online", "offline");
-    statusHint.textContent = "Обновляем статус";
-
-    try {
-      // Простое публичное API: https://api.mcsrvstat.us/2/<domain>
-      const url = `https://api.mcsrvstat.us/2/${encodeURIComponent(DOMAIN)}`;
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-
-      if (!data || data.online !== true) {
-        setOffline("Сервер офлайн (по данным статуса)");
-        return;
-      }
-
-      setMinecraftOnlineText();
-      statusHint.textContent = "Последнее обновление: " + new Date().toLocaleString("ru-RU");
-
-      const online = data.players?.online ?? 0;
-      const max = data.players?.max ?? 0;
-
-      playersNow.textContent = String(online);
-      playersMax.textContent = String(max);
-
-      versionText.textContent = data.version || "—";
-      motdText.textContent = cleanMotd(data.motd?.clean || data.motd?.raw || data.motd);
-
-      const list = data.players?.list;
-      if (Array.isArray(list) && list.length) {
-        playersList.textContent =
-          "Игроки: " + list.slice(0, 20).join(", ") + (list.length > 20 ? " …" : "");
-      } else {
-        playersList.textContent = "Список игроков скрыт или недоступен";
-      }
-    } catch (e) {
-      setOffline("Ошибка получения статуса");
-      console.error(e);
+    // data = { online, playersOnline, playersMax, playerNames?, version?, motd?, lastUpdate? }
+    if (data.online) {
+      els.statusText.textContent = "ONLINE";
+      els.statusText.classList?.remove("offline");
+      els.statusText.classList?.add("online");
+      els.statusHint.textContent = data.lastUpdate ? `Последнее обновление: ${data.lastUpdate}` : "Сервер доступен";
+    } else {
+      els.statusText.textContent = "OFFLINE";
+      els.statusText.classList?.remove("online");
+      els.statusText.classList?.add("offline");
+      els.statusHint.textContent = data.lastUpdate ? `Последнее обновление: ${data.lastUpdate}` : "Сервер недоступен";
     }
+
+    els.playersNow.textContent = String(data.playersOnline ?? 0);
+    els.playersMax.textContent = String(data.playersMax ?? 0);
+
+    if (Array.isArray(data.playerNames) && data.playerNames.length) {
+      els.playersList.textContent = `Игроки: ${data.playerNames.join(", ")}`;
+    } else {
+      els.playersList.textContent = "Список игроков может быть скрыт";
+    }
+
+    els.versionText.textContent = data.version || "—";
+    els.motdText.textContent = data.motd || "—";
+  } catch (e) {
+    els.statusText.textContent = "OFFLINE";
+    els.statusHint.textContent = "Не удалось получить статус (ошибка запроса)";
+    els.playersNow.textContent = "—";
+    els.playersMax.textContent = "—";
+    els.versionText.textContent = "—";
+    els.motdText.textContent = "—";
   }
+}
 
-  copyBtn.addEventListener("click", copyAddress);
-  refreshBtn.addEventListener("click", fetchStatus);
+// ====== FETCHERS ======
 
-  fetchStatus();
-  // авто-обновление раз в 30 секунд
-  setInterval(fetchStatus, 30000);
+// Minecraft через mcsrvstat.us
+async function fetchMinecraftStatus(server) {
+  const url = `https://api.mcsrvstat.us/2/${encodeURIComponent(server.addressToCopy)}`;
+  const r = await fetch(url, { cache: "no-store" });
+  const j = await r.json();
+
+  const online = !!j.online;
+  const playersOnline = j?.players?.online ?? 0;
+  const playersMax = j?.players?.max ?? 0;
+
+  const playerNames = Array.isArray(j?.players?.list) ? j.players.list : [];
+
+  // version
+  const version = j?.version || "";
+
+  // motd может приходить массивом строк
+  let motd = "";
+  if (j?.motd?.clean) motd = Array.isArray(j.motd.clean) ? j.motd.clean.join("\n") : String(j.motd.clean);
+  else if (j?.motd?.raw) motd = Array.isArray(j.motd.raw) ? j.motd.raw.join("\n") : String(j.motd.raw);
+
+  return {
+    online,
+    playersOnline,
+    playersMax,
+    playerNames,
+    version,
+    motd,
+    lastUpdate: new Date().toLocaleString(),
+  };
+}
+
+// Hytale — через твой бэкенд (нужно сделать endpoint)
+async function fetchHytaleStatus(server) {
+  // Ты можешь назвать endpoint как угодно, но тогда поменяй URL тут.
+  const r = await fetch(`/api/hytale-status`, { cache: "no-store" });
+  if (!r.ok) throw new Error("Hytale status endpoint error");
+  const j = await r.json();
+
+  // Ожидаемый формат JSON:
+  // { online: true/false, playersOnline: number, playersMax: number, playerNames?:[], version?:string, motd?:string }
+  return {
+    online: !!j.online,
+    playersOnline: j.playersOnline ?? 0,
+    playersMax: j.playersMax ?? 0,
+    playerNames: Array.isArray(j.playerNames) ? j.playerNames : [],
+    version: j.version || "",
+    motd: j.motd || "",
+    lastUpdate: new Date().toLocaleString(),
+  };
+}
+
+function getActive() {
+  return SERVERS.find(s => s.id === activeId) || SERVERS[0];
+}
+
+// ====== INIT ======
+(function init() {
+  els.year.textContent = String(new Date().getFullYear());
+  renderStatic();
+  els.refreshBtn.addEventListener("click", refreshStatus);
+
+  refreshStatus();
+  // автообновление раз в 30 секунд
+  setInterval(refreshStatus, 30000);
 })();
