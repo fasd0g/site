@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Minecraft сервер — minecraft.serv64rus.ru</title>
+  <meta name="description" content="Официальная страница сервера Minecraft: minecraft.serv64rus.ru" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg"></div>
+
+  <main class="wrap">
+    <header class="hero">
+      <div class="badge">Minecraft Server</div>
+      <h1>minecraft.serv64rus.ru</h1>
+      <p class="subtitle">Заходи играть — статус сервера обновляется автоматически.</p>
+
+      <div class="cta-row">
+        <button id="copyBtn" class="btn primary" type="button" aria-label="Скопировать адрес сервера">
+          Скопировать адрес
+        </button>
+        <a class="btn ghost" href="#howto">Как подключиться</a>
+      </div>
+
+      <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+    </header>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Статус</h2>
+        <div class="big" id="statusText">Загрузка…</div>
+        <div class="muted" id="statusHint">Проверяем сервер</div>
+      </article>
+
+      <article class="card">
+        <h2>Онлайн</h2>
+        <div class="big"><span id="playersNow">—</span> / <span id="playersMax">—</span></div>
+        <div class="muted" id="playersList">Список игроков может быть скрыт</div>
+      </article>
+
+      <article class="card">
+        <h2>Версия</h2>
+        <div class="big" id="versionText">—</div>
+        <div class="muted">Показывается как сообщает сервер</div>
+      </article>
+
+      <article class="card">
+        <h2>MOTD</h2>
+        <pre class="motd" id="motdText">—</pre>
+      </article>
+    </section>
+
+    <section class="card" id="howto">
+      <h2>Как подключиться</h2>
+      <ol class="steps">
+        <li>Открой Minecraft → <b>Сетевая игра</b> → <b>Добавить сервер</b></li>
+        <li>Адрес сервера: <b>minecraft.serv64rus.ru</b></li>
+        <li>Сохрани и заходи 🎮</li>
+      </ol>
+      <p class="muted">
+        На странице IP не отображается — используется только доменное имя.
+      </p>
+    </section>
+
+    <footer class="footer">
+      <span>© <span id="year"></span> minecraft.serv64rus.ru</span>
+      <span class="sep">•</span>
+      <button class="linklike" id="refreshBtn" type="button">Обновить статус</button>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
