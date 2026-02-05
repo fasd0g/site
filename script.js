@@ -199,15 +199,12 @@ async function fetchMinecraftStatus(server) {
   };
 }
 
-// Hytale — через твой бэкенд (нужно сделать endpoint)
+// Hytale — из файла, который обновляет GitHub Actions
 async function fetchHytaleStatus(server) {
-  // Ты можешь назвать endpoint как угодно, но тогда поменяй URL тут.
-  const r = await fetch(`/api/hytale-status`, { cache: "no-store" });
-  if (!r.ok) throw new Error("Hytale status endpoint error");
+  const r = await fetch("status/hytale.json", { cache: "no-store" });
+  if (!r.ok) throw new Error("Cannot load status/hytale.json");
   const j = await r.json();
 
-  // Ожидаемый формат JSON:
-  // { online: true/false, playersOnline: number, playersMax: number, playerNames?:[], version?:string, motd?:string }
   return {
     online: !!j.online,
     playersOnline: j.playersOnline ?? 0,
@@ -215,9 +212,12 @@ async function fetchHytaleStatus(server) {
     playerNames: Array.isArray(j.playerNames) ? j.playerNames : [],
     version: j.version || "",
     motd: j.motd || "",
-    lastUpdate: new Date().toLocaleString(),
+    lastUpdate: j.lastUpdate
+      ? new Date(j.lastUpdate).toLocaleString()
+      : new Date().toLocaleString(),
   };
 }
+
 
 function getActive() {
   return SERVERS.find(s => s.id === activeId) || SERVERS[0];
