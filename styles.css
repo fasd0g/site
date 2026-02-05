@@ -185,3 +185,43 @@ h1{
 @media (max-width: 760px){
   .card{ grid-column: span 12; }
 }
+
+/* Minecraft chat-style colored segments */
+.mc-online {
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  text-shadow: 0 0 10px rgba(85, 255, 85, 0.10);
+}
+
+.mc-online .seg {
+  display: inline-block;
+  animation: mcHue 1.6s linear infinite;
+  will-change: filter;
+}
+
+/* сдвиг фаз для "бегущих" цветов */
+.mc-online .seg:nth-child(1) { animation-delay: 0.0s; }
+.mc-online .seg:nth-child(2) { animation-delay: 0.1s; }
+.mc-online .seg:nth-child(3) { animation-delay: 0.2s; }
+.mc-online .seg:nth-child(4) { animation-delay: 0.3s; }
+.mc-online .seg:nth-child(5) { animation-delay: 0.4s; }
+.mc-online .seg:nth-child(6) { animation-delay: 0.5s; }
+
+@keyframes mcHue {
+  0%   { filter: hue-rotate(0deg) saturate(1.4) brightness(1.05); }
+  100% { filter: hue-rotate(360deg) saturate(1.4) brightness(1.05); }
+}
+
+/* базовые "майнкрафт" цвета по сегментам (в стиле §) */
+.mc-online .seg:nth-child(1) { color: #55ff55; } /* §a */
+.mc-online .seg:nth-child(2) { color: #ffff55; } /* §e */
+.mc-online .seg:nth-child(3) { color: #55ffff; } /* §b */
+.mc-online .seg:nth-child(4) { color: #aa55ff; } /* §d */
+.mc-online .seg:nth-child(5) { color: #ff55ff; } /* §d-ish */
+.mc-online .seg:nth-child(6) { color: #55ff55; } /* loop */
+
+.offline {
+  font-weight: 900;
+  color: #ff5555;
+  text-shadow: 0 0 10px rgba(255, 85, 85, 0.12);
+}

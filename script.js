@@ -38,14 +38,18 @@
   }
 
   function setOffline(reason = "Сервер офлайн или недоступен") {
-    statusText.textContent = "OFFLINE";
-    statusHint.textContent = reason;
-    playersNow.textContent = "0";
-    playersMax.textContent = "0";
-    versionText.textContent = "—";
-    motdText.textContent = "—";
-    playersList.textContent = "—";
+  statusText.textContent = "OFFLINE";
+  statusText.classList.remove("mc-online");
+  statusText.classList.add("offline");
+
+  statusHint.textContent = reason;
+  playersNow.textContent = "0";
+  playersMax.textContent = "0";
+  versionText.textContent = "—";
+  motdText.textContent = "—";
+  playersList.textContent = "—";
   }
+
 
   function cleanMotd(motd) {
     if (!motd) return "—";
